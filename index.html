@@ -1,0 +1,160 @@
+package com.example.cubesolver
+
+import android.Manifest
+import android.graphics.Bitmap
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.material3.icons.Icons
+import androidx.compose.material3.icons.filled.Camera
+import androidx.compose.material3.icons.filled.Check
+import androidx.compose.material3.icons.filled.Tune
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            CubeSolverAppUI()
+        }
+    }
+}
+
+@Composable
+fun CubeSolverAppUI() {
+    var selectedType by remember { mutableStateOf("3x3 Cube") }
+    val cubeTypes = listOf("2x2 Cube", "3x3 Cube", "4x4 Cube", "Skewb", "Pyraminx", "Mirror", "Ivy")
+    var activeScreen by remember { mutableStateOf("home") }
+    var cubeState by remember { mutableStateOf("") }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFEEEEEE)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .background(Color.White, RoundedCornerShape(12.dp)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Cube Solver", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Quickly solve or learn any cube!", color = Color.Gray)
+            // Cube Type Selector
+            DropdownMenu(
+                expanded = true,
+                onDismissRequest = {},
+            ) {
+                cubeTypes.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type) },
+                        onClick = { selectedType = type }
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            // Button Row
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { activeScreen = "manual" },
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Icon(Icons.Default.Tune, contentDescription = "Manual Input")
+                    Text("Manual Input")
+                }
+                Button(
+                    onClick = { activeScreen = "camera" },
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Icon(Icons.Default.Camera, contentDescription = "Camera Input")
+                    Text("Camera Input")
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { activeScreen = "tutorial" },
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = "Tutorial")
+                    Text("Step-by-step")
+                }
+                Button(
+                    onClick = { activeScreen = "auto" },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6DD47E)),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text("Auto Solve")
+                }
+            }
+            // Main section
+            when (activeScreen) {
+                "manual" -> ManualInputUI(
+                    selectedType = selectedType,
+                    onConfirm = { state -> cubeState = state; activeScreen = "auto" },
+                    onCancel = { activeScreen = "home" }
+                )
+                "camera" -> CameraInputUI(
+                    selectedType = selectedType,
+                    onConfirm = { state -> cubeState = state; activeScreen = "auto" },
+                    onCancel = { activeScreen = "home" }
+                )
+                "tutorial" -> TutorialUI(selectedType, onBack = { activeScreen = "home" })
+                "auto" -> ResultUI(selectedType, cubeState, onBack = { activeScreen = "home" })
+            }
+            // Error message
+            errorMsg?.let {
+                Text(it, color = Color.Red)
+            }
+        }
+    }
+}
+
+// Replace following with real implementations
+@Composable
+fun ManualInputUI(selectedType: String, onConfirm: (String) -> Unit, onCancel: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Manual input for $selectedType")
+        // Implement color-picker grid here
+        Button(onClick = { onConfirm("BGRWYO...") }) { Text("Confirm Input") }
+        TextButton(onClick = onCancel) { Text("Cancel") }
+    }
+}
+
+@Composable
+fun CameraInputUI(selectedType: String, onConfirm: (String) -> Unit, onCancel: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Scan your $selectedType cube with the camera")
+        Button(onClick = { onConfirm("OYGRWB...") }) { Text("Capture & Analyze") }
+        TextButton(onClick = onCancel) { Text("Cancel") }
+    }
+}
+
+@Composable
+fun TutorialUI(selectedType: String, onBack: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Step-by-step solution for $selectedType")
+        Text("... moves/algorithms/image steps ...")
+        TextButton(onClick = onBack) { Text("Back") }
+    }
+}
+
+@Composable
+fun ResultUI(selectedType: String, cubeState: String, onBack: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Solved $selectedType:")
+        Text("Moves: U R' F2 ...") // Replace with real output
+        TextButton(onClick = onBack) { Text("Back") }
+    }
+}
